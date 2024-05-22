@@ -51,7 +51,7 @@ export default function Main() {
         name="Discover"
         component={Discover}
         options={{
-          tabBarIcon: ({focused}) => {
+          tabBarIcon: ({focused}: {focused: boolean}) => {
             return focused ? (
               <View style={styles.tabItemContainer}>
                 <SearchIcon />
@@ -85,7 +85,7 @@ export default function Main() {
         name="Inbox"
         component={Inbox}
         options={{
-          tabBarIcon: ({focused}) => {
+          tabBarIcon: ({focused}: {focused: boolean}) => {
             return focused ? (
               <View style={styles.tabItemContainer}>
                 <InboxFilledIcon />
@@ -105,7 +105,7 @@ export default function Main() {
         name="Me"
         component={Profile}
         options={{
-          tabBarIcon: ({focused}) => {
+          tabBarIcon: ({focused}: {focused: boolean}) => {
             return focused ? (
               <View style={styles.tabItemContainer}>
                 <ProfileFilledIcon />

@@ -23,3 +23,9 @@ export function shortenString(inputString: string): string {
   }
   return inputString;
 }
+
+export function convertUrlToHttps(url: string): string {
+  const httpsUrl = url.replace(/^http:\/\//, 'https://');
+  return httpsUrl === url ? url : httpsUrl;
+}
+

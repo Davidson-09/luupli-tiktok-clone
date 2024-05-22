@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import React, {
   Dispatch,
+  RefObject,
   SetStateAction,
   useEffect,
   useRef,
@@ -21,8 +22,13 @@ import LikeOption from './LikeOption';
 import CommentOption from './CommentOption';
 import ShareOption from './ShareOption';
 import {gray} from '../constants/colors';
-import {convertToCustomTimeString, shortenString} from '../utils';
+import {
+  convertToCustomTimeString,
+  convertUrlToHttps,
+  shortenString,
+} from '../utils';
 import {VideoPostRef} from './Feed';
+import FlashList from '@shopify/flash-list/dist/FlashList';
 
 const screenHeight = Dimensions.get('window').height;
 
@@ -30,12 +36,23 @@ interface FeedItemProps {
   post: Post;
   setVideoRefs: Dispatch<SetStateAction<VideoPostRef[]>>;
   videoRefs: VideoPostRef[];
+  listRef: RefObject<FlashList<any>>;
+  currentIndex: number;
+  contentLength: number;
 }
 
-const FeedItem: React.FC<FeedItemProps> = ({post, setVideoRefs, videoRefs}) => {
+const FeedItem: React.FC<FeedItemProps> = ({
+  post,
+  setVideoRefs,
+  videoRefs,
+  listRef,
+  currentIndex,
+  contentLength,
+}) => {
   const [loading, setLoading] = useState(false);
   const [showFullCaption, setShowFullCaption] = useState(false);
   const videoRef = useRef<VideoRef>(null);
+  const [showLikeAnimation, setShowLikeAnimation] = useState(false);
   const {
     profilePhotoUrl,
     likes,
@@ -67,20 +84,32 @@ const FeedItem: React.FC<FeedItemProps> = ({post, setVideoRefs, videoRefs}) => {
           <ActivityIndicator size="large" />
         </View>
       )}
+      {showLikeAnimation && (
+        <View style={styles.likeAnimation}>
+          <Image source={require('../../assets/icons/like.gif')} />
+        </View>
+      )}
       {type === 'video' ? (
         <Video
           source={{
-            uri: videoUrl,
+            uri: convertUrlToHttps(videoUrl),
           }}
           ref={videoRef}
           style={styles.backgroundMedia}
           resizeMode="cover"
           paused
-          onEnd={() => console.log('video has ended')}
+          onEnd={() => {
+            if (currentIndex < contentLength) {
+              listRef.current?.scrollToIndex({
+                index: currentIndex + 1,
+                animated: true,
+              });
+            }
+          }}
           onError={error => console.log('video error', error)}
           onLoad={() => setLoading(false)}
           onLoadStart={() => setLoading(true)}
-          preferredForwardBufferDuration={1}
+          preferredForwardBufferDuration={5}
         />
       ) : (
         <Image source={{uri: imageUrl}} style={styles.backgroundMedia} />
@@ -88,7 +117,10 @@ const FeedItem: React.FC<FeedItemProps> = ({post, setVideoRefs, videoRefs}) => {
 
       <View style={styles.rightOptions}>
         <Thumbnail url={profilePhotoUrl} />
-        <LikeOption numOfLikes={likes} />
+        <LikeOption
+          numOfLikes={likes}
+          setShowLikeAnimation={setShowLikeAnimation}
+        />
         <CommentOption comments={comments} />
         <ShareOption />
       </View>
@@ -102,7 +134,6 @@ const FeedItem: React.FC<FeedItemProps> = ({post, setVideoRefs, videoRefs}) => {
         </Text>
         <TouchableOpacity
           onPress={() => {
-            console.log('pressing...');
             setShowFullCaption(prevVal => !prevVal);
           }}>
           <Text style={styles.caption}>
@@ -171,6 +202,9 @@ const styles = StyleSheet.create({
   more: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  likeAnimation: {
+    zIndex: 70,
   },
 });
 

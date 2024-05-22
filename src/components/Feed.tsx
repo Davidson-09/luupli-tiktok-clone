@@ -1,5 +1,5 @@
 import {View, StyleSheet, ActivityIndicator, ViewToken} from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {FlashList} from '@shopify/flash-list';
 import FeedItem from './FeedItem';
 import useLoadPosts from '../hooks/useLoadPosts';
@@ -8,8 +8,9 @@ import {Dimensions} from 'react-native';
 import {Post} from '../types';
 import {VideoRef} from 'react-native-video';
 import {useRef} from 'react';
+import {useFocusEffect} from '@react-navigation/native';
 
-const screenHeight = Dimensions.get('window').height;
+const screenHeight = Dimensions.get('screen').height;
 
 interface FeedProps {
   feedType: string;
@@ -24,12 +25,20 @@ const Feed: React.FC<FeedProps> = ({feedType}) => {
   const feedUrl = feedType === 'following' ? following : forYou;
   const {posts, isLoading} = useLoadPosts(feedUrl);
   const [videoRefs, setVideoRefs] = useState<VideoPostRef[]>([]);
+  const [currentVideoRef, setCurrentVideoRef] = useState<VideoPostRef | null>();
 
-  const listRef = useRef(null);
+  const listRef = useRef<FlashList<any>>(null);
 
-  const rendertItem = ({item}: {item: Post; index: number}) => {
+  const rendertItem = ({item, index}: {item: Post; index: number}) => {
     return (
-      <FeedItem post={item} setVideoRefs={setVideoRefs} videoRefs={videoRefs} />
+      <FeedItem
+        post={item}
+        setVideoRefs={setVideoRefs}
+        videoRefs={videoRefs}
+        listRef={listRef}
+        currentIndex={index}
+        contentLength={posts.length}
+      />
     );
   };
 
@@ -43,34 +52,52 @@ const Feed: React.FC<FeedProps> = ({feedType}) => {
       return prevVideoKey === videoRef.postId;
     });
     // pause prev video
-    if (prevVideoRef && !callback.changed[0].isViewable) {
+    if (
+      prevVideoRef &&
+      !callback.changed[0].isViewable &&
+      callback.changed[0].index !== 0
+    ) {
       prevVideoRef?.videoRef.seek(0);
       prevVideoRef?.videoRef.pause();
     }
 
+    if (!callback.viewableItems[0]) {
+      return;
+    }
     const currentVideoKey = callback.viewableItems[0].key;
     // find video ref corresponding to the id
-    const currentVideoRef = videoRefs.find(videoRef => {
-      return currentVideoKey === videoRef.postId;
+    const videoRef = videoRefs.find(videoRefItem => {
+      return currentVideoKey === videoRefItem.postId;
     });
-    // if (!currentVideoRef && listRef.current && callback.viewableItems[0].isViewable) {
-    //   console.log('not a video');
-    //   const index: number = callback.viewableItems[0].index as number;
-    //   setTimeout(
-    //     listRef.current.scrollToIndex(
-    //       {
-    //         index: 3,
-    //         animated: true,
-    //       },
-    //       1000,
-    //     ),
-    //   );
-    //   return
-    // }
+    if (!videoRef && listRef.current && callback.viewableItems[0].isViewable) {
+      setCurrentVideoRef(null);
+      const index: number = callback.viewableItems[0].index as number;
+      setTimeout(() => {
+        try {
+          listRef.current?.scrollToIndex({
+            index: index + 1,
+            animated: true,
+          });
+        } catch (e) {
+          throw new Error(e as string);
+        }
+      }, 10000);
+      return;
+    }
     if (callback.viewableItems[0].isViewable) {
-      currentVideoRef?.videoRef.resume();
+      setCurrentVideoRef(videoRef);
+      videoRef?.videoRef.resume();
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      currentVideoRef && currentVideoRef?.videoRef.resume();
+      return () => {
+        currentVideoRef && currentVideoRef?.videoRef.pause();
+      };
+    }, [currentVideoRef]),
+  );
 
   return (
     <View style={styles.container}>

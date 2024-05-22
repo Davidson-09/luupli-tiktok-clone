@@ -1,60 +1,39 @@
 /* eslint-disable react-native/no-inline-styles */
-import {StyleSheet, View, Text, useWindowDimensions} from 'react-native';
-import React, {useState} from 'react';
-import {TabView, SceneMap, TabBar} from 'react-native-tab-view';
+import {StyleSheet, View, Text} from 'react-native';
+import React from 'react';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Feed from '../components/Feed';
+import {createMaterialTopTabNavigator} from '@react-navigation/material-top-tabs';
+
+const Tab = createMaterialTopTabNavigator();
 
 const Following = () => <Feed feedType="following" />;
 
 const ForYou = () => <Feed feedType="for you" />;
 
-const renderScene = SceneMap({
-  following: Following,
-  foryou: ForYou,
-});
+function CustomTabBar({state}: {state: {index: number}}) {
+  return (
+    <SafeAreaView style={{position: 'absolute', width: '100%', zIndex: 20}}>
+      <View style={styles.customTabBar}>
+        <Text
+          style={state.index === 0 ? styles.selectedTab : styles.unselectedTab}>
+          Following
+        </Text>
+        <Text
+          style={state.index === 1 ? styles.selectedTab : styles.unselectedTab}>
+          For You
+        </Text>
+      </View>
+    </SafeAreaView>
+  );
+}
 
 export default function Home() {
-  const layout = useWindowDimensions();
-
-  const [index, setIndex] = useState(0);
-  const [routes] = useState([
-    {key: 'following', title: 'First'},
-    {key: 'foryou', title: 'Second'},
-  ]);
-
-  const renderTabBar = props => (
-    <TabBar
-      {...props}
-      indicatorStyle={{backgroundColor: 'white'}}
-      style={{
-        opacity: 0,
-        position: 'absolute',
-        top: 0,
-      }}
-    />
-  );
-
   return (
-    <View style={styles.container}>
-      <SafeAreaView style={{position: 'absolute', width: '100%', zIndex:20}}>
-        <View style={styles.customTabBar}>
-          <Text style={index === 0 ? styles.selectedTab : styles.unselectedTab}>
-            Following
-          </Text>
-          <Text style={index === 1 ? styles.selectedTab : styles.unselectedTab}>
-            For You
-          </Text>
-        </View>
-      </SafeAreaView>
-      <TabView
-        navigationState={{index, routes}}
-        renderScene={renderScene}
-        onIndexChange={setIndex}
-        initialLayout={{width: layout.width}}
-        renderTabBar={renderTabBar}
-      />
-    </View>
+    <Tab.Navigator tabBar={CustomTabBar} style={styles.container}>
+      <Tab.Screen name="Following" component={Following} />
+      <Tab.Screen name="For You" component={ForYou} />
+    </Tab.Navigator>
   );
 }
 
