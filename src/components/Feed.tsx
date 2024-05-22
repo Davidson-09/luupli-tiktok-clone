@@ -1,5 +1,5 @@
 import {View, StyleSheet, ActivityIndicator, ViewToken} from 'react-native';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {FlashList} from '@shopify/flash-list';
 import FeedItem from './FeedItem';
 import useLoadPosts from '../hooks/useLoadPosts';
@@ -7,6 +7,7 @@ import {following, forYou} from '../constants/feedLinks';
 import {Dimensions} from 'react-native';
 import {Post} from '../types';
 import {VideoRef} from 'react-native-video';
+import {useRef} from 'react';
 
 const screenHeight = Dimensions.get('window').height;
 
@@ -24,6 +25,8 @@ const Feed: React.FC<FeedProps> = ({feedType}) => {
   const {posts, isLoading} = useLoadPosts(feedUrl);
   const [videoRefs, setVideoRefs] = useState<VideoPostRef[]>([]);
 
+  const listRef = useRef(null);
+
   const rendertItem = ({item}: {item: Post; index: number}) => {
     return (
       <FeedItem post={item} setVideoRefs={setVideoRefs} videoRefs={videoRefs} />
@@ -39,9 +42,9 @@ const Feed: React.FC<FeedProps> = ({feedType}) => {
     const prevVideoRef = videoRefs.find(videoRef => {
       return prevVideoKey === videoRef.postId;
     });
-    console.log(prevVideoRef, 'the previous video');
     // pause prev video
-    if (!callback.changed[0].isViewable) {
+    if (prevVideoRef && !callback.changed[0].isViewable) {
+      prevVideoRef?.videoRef.seek(0);
       prevVideoRef?.videoRef.pause();
     }
 
@@ -50,7 +53,20 @@ const Feed: React.FC<FeedProps> = ({feedType}) => {
     const currentVideoRef = videoRefs.find(videoRef => {
       return currentVideoKey === videoRef.postId;
     });
-    console.log(currentVideoRef, 'the current video');
+    // if (!currentVideoRef && listRef.current && callback.viewableItems[0].isViewable) {
+    //   console.log('not a video');
+    //   const index: number = callback.viewableItems[0].index as number;
+    //   setTimeout(
+    //     listRef.current.scrollToIndex(
+    //       {
+    //         index: 3,
+    //         animated: true,
+    //       },
+    //       1000,
+    //     ),
+    //   );
+    //   return
+    // }
     if (callback.viewableItems[0].isViewable) {
       currentVideoRef?.videoRef.resume();
     }
@@ -64,6 +80,7 @@ const Feed: React.FC<FeedProps> = ({feedType}) => {
         </View>
       )}
       <FlashList
+        ref={listRef}
         data={posts}
         renderItem={rendertItem}
         estimatedItemSize={200}

@@ -1,13 +1,18 @@
-export type Post = {
-  caption: string;
-  comments: number;
-  id: string;
-  imageUrl: string;
-  likes: number;
-  shares: number;
-  thumbnailUrl: string;
-  timestamp: string;
+export type Media = {
   type: 'video' | 'image';
-  username: string;
   videoUrl: string;
+  imageUrl: string;
+  previewUrl: string;
+};
+
+export type Post = {
+  id: string;
+  username: string;
+  caption: string;
+  media: Media;
+  profilePhotoUrl: string;
+  likes: number;
+  comments: number;
+  shares: number;
+  timestamp: string;
 };

@@ -1,4 +1,11 @@
-import {View, Text, StyleSheet, Image, ActivityIndicator} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  ActivityIndicator,
+  TouchableOpacity,
+} from 'react-native';
 import React, {
   Dispatch,
   SetStateAction,
@@ -14,7 +21,7 @@ import LikeOption from './LikeOption';
 import CommentOption from './CommentOption';
 import ShareOption from './ShareOption';
 import {gray} from '../constants/colors';
-import {convertToCustomTimeString} from '../utils';
+import {convertToCustomTimeString, shortenString} from '../utils';
 import {VideoPostRef} from './Feed';
 
 const screenHeight = Dimensions.get('window').height;
@@ -27,19 +34,20 @@ interface FeedItemProps {
 
 const FeedItem: React.FC<FeedItemProps> = ({post, setVideoRefs, videoRefs}) => {
   const [loading, setLoading] = useState(false);
+  const [showFullCaption, setShowFullCaption] = useState(false);
   const videoRef = useRef<VideoRef>(null);
   const {
-    thumbnailUrl,
+    profilePhotoUrl,
     likes,
     comments,
     username,
     timestamp,
     caption,
-    type,
-    imageUrl,
     id,
-    videoUrl,
+    media,
   } = post;
+
+  const {type, imageUrl, videoUrl} = media;
 
   useEffect(() => {
     if (type === 'video') {
@@ -72,13 +80,14 @@ const FeedItem: React.FC<FeedItemProps> = ({post, setVideoRefs, videoRefs}) => {
           onError={error => console.log('video error', error)}
           onLoad={() => setLoading(false)}
           onLoadStart={() => setLoading(true)}
+          preferredForwardBufferDuration={1}
         />
       ) : (
         <Image source={{uri: imageUrl}} style={styles.backgroundMedia} />
       )}
 
       <View style={styles.rightOptions}>
-        <Thumbnail url={thumbnailUrl} />
+        <Thumbnail url={profilePhotoUrl} />
         <LikeOption numOfLikes={likes} />
         <CommentOption comments={comments} />
         <ShareOption />
@@ -91,7 +100,18 @@ const FeedItem: React.FC<FeedItemProps> = ({post, setVideoRefs, videoRefs}) => {
             timestamp,
           )}`}</Text>
         </Text>
-        <Text style={styles.caption}>{caption}</Text>
+        <TouchableOpacity
+          onPress={() => {
+            console.log('pressing...');
+            setShowFullCaption(prevVal => !prevVal);
+          }}>
+          <Text style={styles.caption}>
+            {showFullCaption ? caption : shortenString(caption)}
+            <Text style={styles.more}>
+              {caption.length > 100 ? 'more' : ''}
+            </Text>
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -147,6 +167,10 @@ const styles = StyleSheet.create({
     zIndex: 40,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  more: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 
