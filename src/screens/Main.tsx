@@ -128,8 +128,8 @@ const styles = StyleSheet.create({
   tabStyle: {
     display: 'flex',
     height: 100,
-    paddingTop: 5,
-    paddingBottom: 10,
+    paddingTop: 0,
+    paddingBottom: 0,
     backgroundColor: dark,
     alignItems: 'center',
   },

@@ -5,6 +5,7 @@ import {
   Image,
   ActivityIndicator,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import React, {
   Dispatch,
@@ -152,7 +153,7 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
-    height: screenHeight - 100,
+    height: screenHeight - (Platform.OS === 'ios' ? 100 : 120),
   },
   backgroundMedia: {
     position: 'absolute',
